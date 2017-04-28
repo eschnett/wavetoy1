@@ -48,11 +48,13 @@ tests:
   wavetoy1-test-suite:
     dependencies:
     - base
-    - wavetoy1
+    - ieee
     - tasty
     - tasty-hspec
     - tasty-quickcheck
     - tasty-smallcheck
+    - vector
+    - wavetoy1
     ghc-options:
     - -rtsopts
     - -threaded

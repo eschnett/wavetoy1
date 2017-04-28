@@ -10,18 +10,31 @@ main :: IO ()
 main = defaultMain $
   [ bgroup "Grid"
     [ bench "init" $
-      whnf (\np -> let g = initGrid (0.0::Double) (0.0, 1.0) np
-                   in energyGrid g) 1001
+      whnf (\np -> let skel = skeletonGrid (0, 1) np :: Grid Double ()
+                       coords = coordGrid skel
+                       g = initGrid 0 coords
+                   in integralGrid $ energyGrid g) gridSize
     , bench "rhs" $
-      whnf (\np -> let g = initGrid (0.0::Double) (0.0, 1.0) np
+      whnf (\np -> let skel = skeletonGrid (0, 1) np :: Grid Double ()
+                       coords = coordGrid skel
+                       g = initGrid 0 coords
                        bs = bcGrid g
-                       g' = rhsGrid bs g
-                   in energyGrid g') 1001
+                       r = rhsGrid bs g
+                   in integralGrid $ energyGrid r) gridSize
     , bench "rk2" $
-      whnf (\np -> let g = initGrid (0.0::Double) (0.0, 1.0) np
+      whnf (\np -> let skel = skeletonGrid (0, 1) np :: Grid Double ()
+                       coords = coordGrid skel
+                       g = initGrid 0 coords
                        rhs x = rhsGrid (bcGrid x) x
-                       step = rk2Grid 1.0e-8 rhs
-                       g' = iterate step g !! 10
-                   in energyGrid g') 1001
+                       step = rk2Grid smallStep rhs
+                       g' = iterate step g !! numSteps
+                   in integralGrid $ energyGrid g') gridSize
     ]
   ]
+
+gridSize :: Int
+gridSize = 1000
+numSteps :: Int
+numSteps = 10
+smallStep :: Double
+smallStep = 1.0e-8

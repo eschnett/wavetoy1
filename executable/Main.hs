@@ -20,17 +20,21 @@ rhs s = rhsGrid (bcGrid s) s
 inc g = g { iter = iter g + 1 }
 step s = inc $ rk2Grid dt rhs s
 
+iterateUntilM_ predicate action state =
+  do _ <- iterateUntilM predicate action state
+     return ()
+
 main :: IO ()
 main = do putStrLn "WaveToy1"
-          let state = initGrid tini (xmin, xmax) np
+          let skel = skeletonGrid (xmin, xmax) np
+          let state = initGrid tini skel
           output state
-          _ <- iterateUntilM
-            (\s -> iter s >= niters)
-            (\s -> do let s' = step s
-                      output s'
-                      return s')
+          iterateUntilM_
+            (\state -> iter state >= niters)
+            (\state -> do let state' = step state
+                          output state'
+                          return state')
             state
-          return ()
 
 output :: (Floating a, Show a) => Grid a (Cell a) -> IO ()
 output state =

@@ -8,7 +8,8 @@
 
 module WaveToy1 (Cell(..), initCell, errorCell, energyCell, rhsCell,
                  Grid(..), integralGrid, normGrid,
-                 initGrid, errorGrid, energyGrid, rhsGrid, bcGrid, rk2Grid)
+                 skeletonGrid, coordGrid, initGrid, errorGrid, energyGrid,
+                 rhsGrid, bcGrid, rk2Grid)
 where
 
 import Control.Applicative
@@ -39,7 +40,7 @@ initCell :: Floating a => (a, a) -> Cell a
 initCell = sineCell
 
 errorCell :: Floating a => (a, a) -> Cell a -> Cell a
-errorCell (t, x) cell = liftA2 (-) cell (sineCell (t, x))
+errorCell (t, x) cell = liftA2 (-) cell (initCell (t, x))
 
 energyCell :: Fractional a => Cell a -> a
 energyCell (Cell u rho vx) = 1/2 * (rho^2 + vx^2)
@@ -67,6 +68,13 @@ instance Foldable (Grid b) where
 instance Functor (Grid b) where
   fmap f g = g { cells = fmap f (cells g) }
 
+instance Applicative (Grid b) where
+  pure x = error "Cannot create Grid without known size"
+  fg <*> g = let fs = cells fg
+                 xs = cells g
+                 np = V.length xs
+             in g { cells = V.generate np $ \i -> (fs!i) (xs!i) }
+
 integralGrid :: Fractional a => Grid a a -> a
 integralGrid g = getSum (foldMap Sum (cells g)) * dx
   where dx = (xmax - xmin) / fromIntegral np
@@ -78,23 +86,26 @@ normGrid g = sqrt (sumsq / cnt)
   where sumsq = getSum $ foldMap (foldMap (Sum . (^2))) (cells g)
         cnt = getSum $ foldMap (foldMap (Sum . const 1)) (cells g)
 
-coords :: Fractional a => (a, a) -> Int -> Int -> a
-coords (xmin, xmax) np = \i -> xmin + dx * (fromIntegral i + 1/2)
-  where dx = (xmax - xmin) / fromIntegral np
+skeletonGrid :: Num a => (a, a) -> Int -> Grid a ()
+skeletonGrid bnds np = Grid 0 0 bnds $ V.generate np (const ())
 
-initGrid :: Floating a => a -> (a, a) -> Int -> Grid a (Cell a)
-initGrid time bnds np = Grid 0 time bnds $ V.generate np init
-  where init i = initCell (time, coords bnds np i)
-
-errorGrid :: Floating a => Grid a (Cell a) -> Grid a (Cell a)
-errorGrid g = g { cells = V.imap error (cells g) }
-  where error i cell = errorCell (t, x i) cell
-        t = time g
-        x = coords (bnds g) np
+coordGrid :: Fractional a => Grid a b -> Grid a a
+coordGrid g = g { cells = V.generate np coords }
+  where coords = \i -> xmin + dx * (fromIntegral i + 1/2)
+        dx = (xmax - xmin) / fromIntegral np
+        (xmin, xmax) = bnds g
         np = V.length (cells g)
 
+initGrid :: Floating a => a -> Grid a b -> Grid a (Cell a)
+initGrid t g = fmap init (coordGrid g) { time = t }
+  where init x = initCell (t, x)
+
+errorGrid :: Floating a => Grid a (Cell a) -> Grid a (Cell a)
+errorGrid g = error <$> coordGrid g <*> g
+  where error x c = errorCell (time g, x) c
+
 energyGrid :: Fractional a => Grid a (Cell a) -> Grid a a
-energyGrid g = g { cells = V.map energyCell (cells g) }
+energyGrid g = fmap energyCell g
 
 rhsGrid :: Fractional a =>
            (Cell a, Cell a) -> Grid a (Cell a) -> Grid a (Cell a)
