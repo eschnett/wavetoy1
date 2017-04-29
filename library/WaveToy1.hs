@@ -69,7 +69,7 @@ instance Functor (Grid b) where
   fmap f g = g { cells = fmap f (cells g) }
 
 instance Applicative (Grid b) where
-  pure x = error "Cannot create Grid without known size"
+  pure x = error "Cannot create Grid with unknown size"
   fg <*> g = let fs = cells fg
                  xs = cells g
                  np = V.length xs
@@ -110,7 +110,10 @@ energyGrid g = fmap energyCell g
 rhsGrid :: Fractional a =>
            (Cell a, Cell a) -> Grid a (Cell a) -> Grid a (Cell a)
 rhsGrid (lb, ub) g@(Grid _ _ (xmin, xmax) cs) = g { cells = V.fromList rhs }
-  where rhs = rblo ++ rint ++ rbhi
+  where rhs = if np == 1
+              then rall
+              else rblo ++ rint ++ rbhi
+        rall = [rhsCell dx (lb, ub) (cs ! 0)]
         rblo = [rhsCell dx (lb, cs ! 1) (cs ! 0)]
         rint = [rhsCell dx (cs ! (i-1), cs ! (i+1)) (cs ! i) |
                 i <- [1 .. np-2]]

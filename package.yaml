@@ -5,8 +5,8 @@ benchmarks:
   wavetoy1-benchmarks:
     dependencies:
     - base
-    - wavetoy1
     - criterion
+    - wavetoy1
     ghc-options:
     - -rtsopts
     - -threaded
@@ -48,7 +48,7 @@ tests:
   wavetoy1-test-suite:
     dependencies:
     - base
-    - ieee
+    - ieee754
     - tasty
     - tasty-hspec
     - tasty-quickcheck

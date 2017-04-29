@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-dodgy-imports #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 -- Tasty makes it easy to test your code. It is a test framework that can
@@ -13,6 +14,7 @@ import Test.Tasty.Hspec
 import Test.Tasty.QuickCheck
 
 import Data.Functor.Identity
+import Data.Semigroup
 import Data.Vector ((!))
 import Numeric.IEEE
 import Prelude hiding ((!))
@@ -94,7 +96,10 @@ specGrid = parallel $
             ==> let skel = skeletonGrid (xmin, xmax) np
                     coords = coordGrid skel :: Grid Double Double
                     int = integralGrid $ fmap (\x -> alpha*x+beta) coords
-                  in int ~~ alpha * (xmax^2 - xmin^2) / 2 + beta * (xmax - xmin)
+                    good_int = alpha * (xmax^2 - xmin^2) / 2 +
+                               beta * (xmax - xmin)
+                    scales = [xmin, xmax, xmin^2, xmax^2]
+                in approxEq scales int good_int
      describe "normGrid" $
        do it "is positive" $ property $
             \alpha xmin xmax np -> np > 0 && xmax > xmin
@@ -140,9 +145,46 @@ specGrid = parallel $
                     g = initGrid t coords :: Grid Double (Cell Double)
                     etot = integralGrid $ energyGrid g
                 in etot > 0
+     describe "rhsGrid" $
+       do it "does stuff" $ property $
+            \t xmin xmax np -> np > 0 && xmax > xmin
+            ==> let skel = skeletonGrid (xmin, xmax) np
+                    coords = coordGrid skel
+                    g = initGrid t coords :: Grid Double (Cell Double)
+                    bcs = bcGrid g
+                    r = rhsGrid bcs g
+                    norm = normGrid r
+                in norm >= 0
+     describe "rk2Grid" $
+       do it "does stuff" $ property $
+            \t xmin xmax np dt -> np > 0 && xmax > xmin
+            ==> let skel = skeletonGrid (xmin, xmax) np
+                    coords = coordGrid skel
+                    g = initGrid t coords :: Grid Double (Cell Double)
+                    rhs g = rhsGrid (bcGrid g) g
+                    g' = rk2Grid dt rhs g
+                    norm = normGrid g'
+                in norm >= 0
+
+
+
+-- !Minimum and maximum Float values
+instance Bounded Float where
+  minBound = -infinity
+  maxBound = infinity
+
+-- !Minimum and maximum Double values
+instance Bounded Double where
+  minBound = -infinity
+  maxBound = infinity
 
 -- |Approximate floating-point comparison
-(~~) :: (IEEE a, RealFrac a) => a -> a -> Bool
-x ~~ y = abs (x - y) < precision * epsilon * (1 + abs x + abs y)
-  where precision = 100
+(~~) :: (Bounded a, IEEE a, Num a) => a -> a -> Bool
+(~~) = approxEq [1]
 infix 4 ~~
+
+-- |Approximate floating-point comparison
+approxEq :: (Bounded a, IEEE a, Num a) => [a] -> a -> a -> Bool
+approxEq standards x y = abs (x - y) < precision * epsilon * standard
+  where standard = getMax $ foldMap (Max . abs) (x : y : standards)
+        precision = 100
