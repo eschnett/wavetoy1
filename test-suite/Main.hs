@@ -98,7 +98,9 @@ specGrid = parallel $
                     int = integralGrid $ fmap (\x -> alpha*x+beta) coords
                     good_int = alpha * (xmax^2 - xmin^2) / 2 +
                                beta * (xmax - xmin)
-                    scales = [xmin, xmax, xmin^2, xmax^2]
+                    scales = [alpha, beta, xmin, xmax, xmin^2, xmax^2,
+                              alpha * xmin^2, alpha * xmax^2,
+                              beta * xmin, beta * xmax]
                 in approxEq scales int good_int
      describe "normGrid" $
        do it "is positive" $ property $
