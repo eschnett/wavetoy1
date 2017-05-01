@@ -9,8 +9,6 @@ import WaveToy1
 -- Parameters
 tini :: Double
 tini = 0
-tfin :: Double
-tfin = 1
 xmin :: Double
 xmin = 0
 xmax :: Double
