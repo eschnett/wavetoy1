@@ -14,7 +14,6 @@ import Test.Tasty.Hspec
 import Test.Tasty.QuickCheck
 
 import Data.Functor.Identity
-import Data.Semigroup
 import Data.Vector ((!))
 import Numeric.IEEE
 import Prelude hiding ((!))
@@ -98,10 +97,11 @@ specGrid = parallel $
                     int = integralGrid $ fmap (\x -> alpha*x+beta) coords
                     good_int = alpha * (xmax^2 - xmin^2) / 2 +
                                beta * (xmax - xmin)
-                    scales = [alpha, beta, xmin, xmax, xmin^2, xmax^2,
-                              alpha * xmin^2, alpha * xmax^2,
-                              beta * xmin, beta * xmax]
-                in approxEq scales int good_int
+                    scale = absmaximum
+                            [alpha, beta, xmin, xmax, xmin^2, xmax^2,
+                             alpha * xmin^2, alpha * xmax^2,
+                             beta * xmin, beta * xmax]
+                in approxEq scale int good_int
      describe "normGrid" $
        do it "is positive" $ property $
             \alpha xmin xmax np -> np > 0 && xmax > xmin
@@ -115,7 +115,8 @@ specGrid = parallel $
                     coords = coordGrid skel :: Grid Double Double
                     norm = normGrid $ fmap (const $ Identity beta) coords
                     -- xnorm = sqrt (1/3 * (xmax^3 - xmin^3) / (xmax - xmin)) 
-                in norm ~~ abs beta
+                    scale = absmaximum [beta^2]
+                in approxEq scale norm (abs beta)
      describe "initGrid" $
        do it "has the right time" $ property $
             \t xmin xmax np -> np > 0 && xmax > xmin
@@ -170,23 +171,17 @@ specGrid = parallel $
 
 
 
--- !Minimum and maximum Float values
-instance Bounded Float where
-  minBound = -infinity
-  maxBound = infinity
-
--- !Minimum and maximum Double values
-instance Bounded Double where
-  minBound = -infinity
-  maxBound = infinity
-
 -- |Approximate floating-point comparison
-(~~) :: (Bounded a, IEEE a, Num a) => a -> a -> Bool
-(~~) = approxEq [1]
+(~~) :: (IEEE a, Num a) => a -> a -> Bool
+(~~) = approxEq 1
 infix 4 ~~
 
 -- |Approximate floating-point comparison
-approxEq :: (Bounded a, IEEE a, Num a) => [a] -> a -> a -> Bool
-approxEq standards x y = abs (x - y) < precision * epsilon * standard
-  where standard = getMax $ foldMap (Max . abs) (x : y : standards)
-        precision = 100
+approxEq :: (IEEE a, Num a) => a -> a -> a -> Bool
+approxEq scale x y = abs (x - y) < precision * epsilon * scale'
+  where precision = 100
+        scale' = absmaximum [abs x, abs y, scale]
+
+-- |Maximum of absolute values
+absmaximum :: (Foldable t, Functor t, Num a, Ord a) => t a -> a
+absmaximum = maximum . fmap abs
