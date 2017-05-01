@@ -56,8 +56,7 @@ flipCell (Cell u rho vx) = Cell (-u) (-rho) vx
 
 
 -- |A grid holds the state vector for the whole simulation domain.
-data Grid b a = Grid { iter :: Int,
-                       time :: b,
+data Grid b a = Grid { time :: b,
                        bnds :: (b, b),
                        cells :: V.Vector a }
   deriving (Read, Show)
@@ -87,7 +86,7 @@ normGrid g = sqrt (sumsq / cnt)
         cnt = getSum $ foldMap (foldMap (Sum . const 1)) (cells g)
 
 skeletonGrid :: Num a => (a, a) -> Int -> Grid a ()
-skeletonGrid bnds np = Grid 0 0 bnds $ V.generate np (const ())
+skeletonGrid bnds np = Grid 0 bnds $ V.generate np (const ())
 
 coordGrid :: Fractional a => Grid a b -> Grid a a
 coordGrid g = g { cells = V.generate np coords }
@@ -109,7 +108,7 @@ energyGrid g = fmap energyCell g
 
 rhsGrid :: Fractional a =>
            (Cell a, Cell a) -> Grid a (Cell a) -> Grid a (Cell a)
-rhsGrid (lb, ub) g@(Grid _ _ (xmin, xmax) cs) = g { cells = V.fromList rhs }
+rhsGrid (lb, ub) g@(Grid _ (xmin, xmax) cs) = g { cells = V.fromList rhs }
   where rhs = if np == 1
               then rall
               else rblo ++ rint ++ rbhi
@@ -135,6 +134,6 @@ rk2Grid dt rhs s0 =
       r1 = rhs s1
       s2 = step s0 dt r1
   in s2
-  where step (Grid it t bnds state) dt (Grid _ _ _ rhs) =
-          Grid it (t + dt) bnds $ V.zipWith (liftA2 step') state rhs
+  where step (Grid t bnds state) dt (Grid _ _ rhs) =
+          Grid (t + dt) bnds $ V.zipWith (liftA2 step') state rhs
         step' s r = s + dt * r

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
 {-# OPTIONS_GHC -fno-warn-name-shadowing #-}
 
 import Control.Monad
@@ -8,6 +9,8 @@ import WaveToy1
 -- Parameters
 tini :: Double
 tini = 0
+tfin :: Double
+tfin = 1
 xmin :: Double
 xmin = 0
 xmax :: Double
@@ -34,20 +37,21 @@ main :: IO ()
 main =
   do putStrLn "WaveToy1"
      let skel = skeletonGrid (xmin, xmax) np
+     let iter = 0
      let state = initGrid tini skel
-     output state
-     iterateWhileM_ cond step state
-  where cond state = iter state < niters
-        step state = do let state' = inc $ rk2Grid dt rhs state
-                        output state'
-                        return state'
+     output (iter, state)
+     iterateWhileM_ cond step (iter, state)
+  where cond (iter, state) = iter < niters
+        step (iter, state) = do let iter' = iter + 1
+                                let state' = rk2Grid dt rhs state
+                                output (iter', state')
+                                return (iter', state')
         rhs s = rhsGrid (bcGrid s) s
-        inc s = s { iter = iter s + 1 }
 
-output :: (Floating a, Show a) => Grid a (Cell a) -> IO ()
-output state =
-  do guard $ not (iter state == niters || iter state `mod` out_every == 0)
-     putStrLn $ "iteration: " ++ show (iter state)
+output :: (Floating a, Show a) => (Int, Grid a (Cell a)) -> IO ()
+output (iter, state) =
+  do guard $ not (iter == niters || iter `mod` out_every == 0)
+     putStrLn $ "iteration: " ++ show iter
      putStrLn $ "  time: " ++ show (time state)
      let energy = integralGrid $ energyGrid state
      putStrLn $ "  energy: " ++ show energy
