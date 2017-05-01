@@ -75,15 +75,15 @@ instance Applicative (Grid b) where
              in g { cells = V.generate np $ \i -> (fs!i) (xs!i) }
 
 integralGrid :: Fractional a => Grid a a -> a
-integralGrid g = getSum (foldMap Sum (cells g)) * dx
+integralGrid g = getSum (foldMap Sum g) * dx
   where dx = (xmax - xmin) / fromIntegral np
         (xmin, xmax) = bnds g
         np = V.length (cells g)
 
 normGrid :: (Floating a, Foldable c) => Grid a (c a) -> a
 normGrid g = sqrt (sumsq / cnt)
-  where sumsq = getSum $ foldMap (foldMap (Sum . (^2))) (cells g)
-        cnt = getSum $ foldMap (foldMap (Sum . const 1)) (cells g)
+  where sumsq = getSum $ foldMap (foldMap (Sum . (^2))) g
+        cnt = getSum $ foldMap (foldMap (Sum . const 1)) g
 
 skeletonGrid :: Num a => (a, a) -> Int -> Grid a ()
 skeletonGrid bnds np = Grid 0 bnds $ V.generate np (const ())
