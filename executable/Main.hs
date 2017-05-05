@@ -62,10 +62,10 @@ output
   :: (Floating a, Show a)
   => (Int, Grid a (Cell a)) -> IO ()
 output (iter, state) = do
-  guard $ not (iter == niters || iter `mod` out_every == 0)
-  putStrLn $ "iteration: " ++ show iter
-  putStrLn $ "  time: " ++ show (time state)
-  let energy = integralGrid $ energyGrid state
-  putStrLn $ "  energy: " ++ show energy
-  let error = normGrid $ errorGrid state
-  putStrLn $ "  L2 error: " ++ show error
+  when (iter == niters || iter `mod` out_every == 0) $ do
+    putStrLn $ "iteration: " ++ show iter
+    putStrLn $ "  time: " ++ show (time state)
+    let energy = integralGrid $ energyGrid state
+    putStrLn $ "  energy: " ++ show energy
+    let error = normGrid $ errorGrid state
+    putStrLn $ "  L2 error: " ++ show error
