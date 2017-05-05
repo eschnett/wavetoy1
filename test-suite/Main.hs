@@ -58,17 +58,17 @@ specCell =
     describe "energyCell" $ do
       it "is zero for vacuum" $
         property $ \u ->
-          let c = Cell u 0.0 0.0 :: Cell Double
+          let c = Cell u 0 0 :: Cell Double
               e = energyCell c
-          in e == 0.0
+          in e == 0
       it "has the correct potential term" $
         property $ \rho ->
-          let c = Cell 0.0 rho 0.0 :: Cell Double
+          let c = Cell 0 rho 0 :: Cell Double
               e = energyCell c
           in e == 0.5 * rho ^ 2
       it "has the correct kinetic term" $
         property $ \vx ->
-          let c = Cell 0.0 0.0 vx :: Cell Double
+          let c = Cell 0 0 vx :: Cell Double
               e = energyCell c
           in e == 0.5 * vx ^ 2
     describe "rhsCel" $ do
