@@ -7,6 +7,16 @@ A progression of WaveToy implementations in Haskell. This is step 1, a
 straightforward implementation serving mostly as basis for further
 improvements.
 
+Problem description
+-------------------
+
+.. math::
+
+   \partial_{tt} u = \partial_{xx} u
+
+Build instructions
+------------------
+
 .. code:: sh
 
     # Build the project.
