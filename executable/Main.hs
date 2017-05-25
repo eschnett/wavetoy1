@@ -34,38 +34,34 @@ niters = round (fromIntegral np / alpha)
 out_every :: Int
 out_every = niters `div` 10
 
-iterateWhileM_
-  :: Monad m
-  => (a -> Bool) -> (a -> m a) -> a -> m ()
+iterateWhileM_ :: Monad m => (a -> Bool) -> (a -> m a) -> a -> m ()
 iterateWhileM_ predicate action state = do
-  _ <- iterateUntilM (not . predicate) action state
-  return ()
+    _ <- iterateUntilM (not . predicate) action state
+    return ()
 
 main :: IO ()
 main = do
-  putStrLn "WaveToy1"
-  let skel = skeletonGrid (xmin, xmax) np
-  let iter = 0
-  let state = initGrid tini skel
-  output (iter, state)
-  iterateWhileM_ cond step (iter, state)
+    putStrLn "WaveToy1"
+    let skel = skeletonGrid (xmin, xmax) np
+    let iter = 0
+    let state = initGrid tini skel
+    output (iter, state)
+    iterateWhileM_ cond step (iter, state)
   where
     cond (iter, state) = iter < niters
     step (iter, state) = do
-      let iter' = iter + 1
-      let state' = rk2Grid dt rhs state
-      output (iter', state')
-      return (iter', state')
+        let iter' = iter + 1
+        let state' = rk2Grid dt rhs state
+        output (iter', state')
+        return (iter', state')
     rhs s = rhsGrid (bcGrid s) s
 
-output
-  :: (Floating a, Show a)
-  => (Int, Grid a (Cell a)) -> IO ()
+output :: (Floating a, Show a) => (Int, Grid a (Cell a)) -> IO ()
 output (iter, state) = do
-  when (iter == niters || iter `mod` out_every == 0) $ do
-    putStrLn $ "iteration: " ++ show iter
-    putStrLn $ "  time: " ++ show (time state)
-    let energy = integralGrid $ energyGrid state
-    putStrLn $ "  energy: " ++ show energy
-    let error = normGrid $ errorGrid state
-    putStrLn $ "  L2 error: " ++ show error
+    when (iter == niters || iter `mod` out_every == 0) $ do
+        putStrLn $ "iteration: " ++ show iter
+        putStrLn $ "  time: " ++ show (time state)
+        let energy = integralGrid $ energyGrid state
+        putStrLn $ "  energy: " ++ show energy
+        let error = normGrid $ errorGrid state
+        putStrLn $ "  L2 error: " ++ show error
