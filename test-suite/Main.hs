@@ -71,15 +71,20 @@ specCell =
                     let c = Cell 0 0 vx :: Cell Double
                         e = energyCell c
                     in e == 0.5 * vx ^ 2
-        describe "rhsCel" $ do
+        describe "rhsCell" $ do
             it "is not all zero" $
-                property $ \t x dx ->
-                    (dx > 0) ==>
-                    let lb = initCell (t, x - dx)
-                        ub = initCell (t, x + dx)
-                        c = initCell (t, x) :: Cell Double
-                        r = rhsCell (2 * dx) (lb, ub) c
+                property $ \t x ->
+                    let c = initCell (t, x) :: Cell Double
+                        cx = initCell (t + 0.1, x) :: Cell Double
+                        r = rhsCell c cx
                     in u r /= 0 || rho r /= 0 || vx r /= 0
+        describe "reflectCell" $ do
+            it "is possibly a reflection" $
+                property $ \t x ->
+                    let c = initCell (t, x) :: Cell Double
+                        r = bcCell c
+                    in abs (u r) == abs (u c) &&
+                       abs (rho r) == abs (rho c) && abs (vx r) == abs (vx c)
 
 specGrid :: Spec
 specGrid =
@@ -87,18 +92,18 @@ specGrid =
         describe "skeletonGrid" $ do
             it "has the right extent" $
                 property $ \xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np :: Grid Double ()
                     in bnds skel == (xmin, xmax)
             it "has the right size" $
                 property $ \xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np :: Grid Double ()
                     in length (cells skel) == np
         describe "coordGrid" $ do
             it "is monotonic" $
                 property $ \xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel :: Grid Double Double
                         cs = cells coords
@@ -108,13 +113,13 @@ specGrid =
         describe "integralGrid" $ do
             it "is linear" $
                 property $ \alpha beta xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel :: Grid Double Double
                         int =
                             integralGrid $ fmap (\x -> alpha * x + beta) coords
                         good_int =
-                            alpha * (xmax ^ 2 - xmin ^ 2) / 2 +
+                            1 / 2 * alpha * (xmax ^ 2 - xmin ^ 2) +
                             beta * (xmax - xmin)
                         scale =
                             absmaximum
@@ -133,7 +138,7 @@ specGrid =
         describe "normGrid" $ do
             it "is positive" $
                 property $ \alpha xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel :: Grid Double Double
                         norm =
@@ -141,17 +146,17 @@ specGrid =
                     in norm >= 0
             it "is linear" $
                 property $ \beta xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel :: Grid Double Double
-                        norm = normGrid $ fmap (const $ Identity beta) coords
-                    -- xnorm = sqrt (1/3 * (xmax^3 - xmin^3) / (xmax - xmin)) 
+                        g = fmap (const $ Identity beta) coords
+                        norm = normGrid g :: Double
                         scale = absmaximum [beta ^ 2]
                     in approxEq scale norm (abs beta)
         describe "initGrid" $ do
             it "has the right time" $
                 property $ \t xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel
                         g = initGrid t coords :: Grid Double (Cell Double)
@@ -159,7 +164,7 @@ specGrid =
         describe "errorGrid" $ do
             it "is zero when exact" $
                 property $ \t xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel
                         g = initGrid t coords :: Grid Double (Cell Double)
@@ -167,7 +172,7 @@ specGrid =
                     in all (all (~~ 0)) err
             it "is not all zero when inexact" $
                 property $ \t t' xmin xmax np ->
-                    (t /= t' && np > 0 && xmax > xmin) ==>
+                    (t /= t' && np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel
                         g = initGrid t coords :: Grid Double (Cell Double)
@@ -177,7 +182,7 @@ specGrid =
         describe "energyGrid" $ do
             it "is positive" $
                 property $ \t xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel
                         g = initGrid t coords :: Grid Double (Cell Double)
@@ -186,22 +191,21 @@ specGrid =
         describe "rhsGrid" $ do
             it "does stuff" $
                 property $ \t xmin xmax np ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel
                         g = initGrid t coords :: Grid Double (Cell Double)
-                        bcs = bcGrid g
-                        r = rhsGrid bcs g
+                        r = bcGrid (rhsGrid g)
                         norm = normGrid r
                     in norm >= 0
         describe "rk2Grid" $ do
             it "does stuff" $
                 property $ \t xmin xmax np dt ->
-                    (np > 0 && xmax > xmin) ==>
+                    (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel
                         g = initGrid t coords :: Grid Double (Cell Double)
-                        rhs g = rhsGrid (bcGrid g) g
+                        rhs g = bcGrid (rhsGrid g)
                         g' = rk2Grid dt rhs g
                         norm = normGrid g'
                     in norm >= 0

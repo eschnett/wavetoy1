@@ -16,11 +16,11 @@ xmin = 0
 xmax :: Double
 xmax = 1
 
-np :: Int
-np = 20
+ncells :: Int
+ncells = 20
 
 dx :: Double
-dx = (xmax - xmin) / fromIntegral np
+dx = (xmax - xmin) / fromIntegral ncells
 
 alpha :: Double
 alpha = 1 / 2
@@ -29,7 +29,7 @@ dt :: Double
 dt = alpha * dx
 
 niters :: Int
-niters = round (fromIntegral np / alpha)
+niters = round (fromIntegral ncells / alpha)
 
 out_every :: Int
 out_every = niters `div` 10
@@ -42,7 +42,7 @@ iterateWhileM_ predicate action state = do
 main :: IO ()
 main = do
     putStrLn "WaveToy1"
-    let skel = skeletonGrid (xmin, xmax) np
+    let skel = skeletonGrid (xmin, xmax) (ncells + 3)
     let iter = 0
     let state = initGrid tini skel
     output (iter, state)
@@ -54,9 +54,9 @@ main = do
         let state' = rk2Grid dt rhs state
         output (iter', state')
         return (iter', state')
-    rhs s = rhsGrid (bcGrid s) s
+    rhs s = bcGrid (rhsGrid s)
 
-output :: (Floating a, Show a) => (Int, Grid a (Cell a)) -> IO ()
+output :: (RealFloat a, Show a) => (Int, Grid a (Cell a)) -> IO ()
 output (iter, state) = do
     when (iter == niters || iter `mod` out_every == 0) $ do
         putStrLn $ "iteration: " ++ show iter

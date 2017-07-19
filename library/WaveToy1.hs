@@ -11,6 +11,7 @@ module WaveToy1
     , errorCell
     , energyCell
     , rhsCell
+    , bcCell
     , Grid(..)
     , integralGrid
     , normGrid
@@ -25,6 +26,7 @@ module WaveToy1
     ) where
 
 import Control.Applicative
+import Control.Exception.Base
 import Data.Monoid
 import Data.Vector ((!))
 import qualified Data.Vector as V
@@ -57,16 +59,14 @@ errorCell :: Floating a => (a, a) -> Cell a -> Cell a
 errorCell (t, x) cell = liftA2 (-) cell (initCell (t, x))
 
 energyCell :: Fractional a => Cell a -> a
-energyCell (Cell u rho vx) = 1 / 2 * (rho ^ 2 + vx ^ 2)
+energyCell c = 1 / 2 * ((rho c) ^ 2 + (vx c) ^ 2)
 
-rhsCell :: Fractional a => a -> (Cell a, Cell a) -> Cell a -> Cell a
-rhsCell dx (lb, ub) c = Cell (rho c) (ddx vx) (ddx rho)
-  where
-    ddx f = (f ub - f lb) / (2 * dx)
+rhsCell :: Cell a -> Cell a -> Cell a
+rhsCell c cx = Cell (rho c) (vx cx) (rho cx)
 
--- reflecting boundaries: u -> -u
-flipCell :: Num a => Cell a -> Cell a
-flipCell (Cell u rho vx) = Cell (-u) (-rho) vx
+-- Reflecting boundaries: u -> -u, rho -> -rho, vx -> vx
+bcCell :: Num a => Cell a -> Cell a
+bcCell c = Cell (-u c) (-rho c) (vx c)
 
 -- |A grid holds the state vector for the whole simulation domain.
 data Grid b a = Grid
@@ -74,6 +74,15 @@ data Grid b a = Grid
     , bnds :: (b, b)
     , cells :: V.Vector a
     } deriving (Read, Show)
+
+npGrid :: Grid b a -> Int
+npGrid g = V.length (cells g)
+
+dxGrid :: Fractional b => Grid b a -> b
+dxGrid g = (xmax - xmin) / (fromIntegral np - 3)
+  where
+    (xmin, xmax) = bnds g
+    np = npGrid g
 
 instance Foldable (Grid b) where
     foldMap f g = foldMap f (cells g)
@@ -83,35 +92,41 @@ instance Functor (Grid b) where
 
 instance Applicative (Grid b) where
     pure x = error "Cannot create Grid with unknown size"
-    fg <*> g =
-        let fs = cells fg
-            xs = cells g
-            np = V.length xs
-        in g {cells = V.generate np $ \i -> (fs ! i) (xs ! i)}
+    fg <*> g = g {cells = V.generate (npGrid g) $ \i -> (fs ! i) (xs ! i)}
+      where
+        fs = cells fg
+        xs = cells g
 
-integralGrid :: Fractional a => Grid a a -> a
-integralGrid g = getSum (foldMap Sum g) * dx
+densitizeGrid :: Fractional a => Grid b a -> Grid b a
+densitizeGrid g = g {cells = V.imap dens (cells g)}
   where
-    dx = (xmax - xmin) / fromIntegral np
-    (xmin, xmax) = bnds g
-    np = V.length (cells g)
+    dens i x
+        | i == 0 || i == np - 1 = 0
+    dens i x
+        | i == 1 || i == np - 2 = 1 / 2 * x
+    dens i x = x
+    np = npGrid g
 
-normGrid :: (Floating a, Foldable c) => Grid a (c a) -> a
+-- volumeFormGrid :: Fractional a => Grid b c -> Grid b a
+-- volumeFormGrid g = densitizeGrid (fmap (const 1) g)
+integralGrid :: (Fractional a, RealFrac b) => Grid b a -> a
+integralGrid g = realToFrac (dxGrid g) * sum (densitizeGrid g)
+
+normGrid :: (Floating a, Foldable c, RealFrac b) => Grid b (c a) -> a
 normGrid g = sqrt (sumsq / cnt)
   where
-    sumsq = getSum $ foldMap (foldMap (Sum . (^ 2))) g
-    cnt = getSum $ foldMap (foldMap (Sum . const 1)) g
+    sumsq = integralGrid $ fmap (getSum . foldMap (Sum . (^ 2))) g
+    cnt = integralGrid $ fmap (fromIntegral . length) g
 
 skeletonGrid :: Num a => (a, a) -> Int -> Grid a ()
-skeletonGrid bnds np = Grid 0 bnds $ V.generate np (const ())
+skeletonGrid bnds np = assert (np > 3) $ Grid 0 bnds $ V.generate np (const ())
 
 coordGrid :: Fractional a => Grid a b -> Grid a a
-coordGrid g = g {cells = V.generate np coords}
+coordGrid g = g {cells = V.generate (npGrid g) coords}
   where
-    coords = \i -> xmin + dx * (fromIntegral i + 1 / 2)
-    dx = (xmax - xmin) / fromIntegral np
-    (xmin, xmax) = bnds g
-    np = V.length (cells g)
+    coords i = xmin + dx * (fromIntegral i - 1)
+    (xmin, _) = bnds g
+    dx = dxGrid g
 
 initGrid :: Floating a => a -> Grid a b -> Grid a (Cell a)
 initGrid t g = fmap init (coordGrid g) {time = t}
@@ -126,28 +141,34 @@ errorGrid g = error <$> coordGrid g <*> g
 energyGrid :: Fractional a => Grid a (Cell a) -> Grid a a
 energyGrid g = fmap energyCell g
 
-rhsGrid ::
-       Fractional a => (Cell a, Cell a) -> Grid a (Cell a) -> Grid a (Cell a)
-rhsGrid (lb, ub) g@(Grid _ (xmin, xmax) cs) = g {cells = V.fromList rhs}
+derivGrid ::
+       (Applicative c, Fractional a, RealFrac b) => Grid b (c a) -> Grid b (c a)
+derivGrid g = g {cells = V.generate np deriv}
   where
-    rhs =
-        if np == 1
-            then rall
-            else rblo ++ rint ++ rbhi
-    rall = [rhsCell dx (lb, ub) (cs ! 0)]
-    rblo = [rhsCell dx (lb, cs ! 1) (cs ! 0)]
-    rint =
-        [rhsCell dx (cs ! (i - 1), cs ! (i + 1)) (cs ! i) | i <- [1 .. np - 2]]
-    rbhi = [rhsCell dx (cs ! (np - 2), ub) (cs ! (np - 1))]
-    dx = (xmax - xmin) / fromIntegral np
-    np = length cs
+    deriv i
+        | i == 0 = diff (1 / dx) (cs ! 0) (cs ! 1)
+    deriv i
+        | i == np - 1 = diff (1 / dx) (cs ! (np - 2)) (cs ! (np - 1))
+    deriv i = diff (1 / (2 * dx)) (cs ! (i - 1)) (cs ! (i + 1))
+    diff alpha = liftA2 (\xm xp -> realToFrac alpha * (xp - xm))
+    cs = cells g
+    np = npGrid g
+    dx = dxGrid g
 
-bcGrid :: Num a => Grid b (Cell a) -> (Cell a, Cell a)
-bcGrid g = (flipCell blo, flipCell bhi)
+rhsGrid :: (Fractional a, RealFrac b) => Grid b (Cell a) -> Grid b (Cell a)
+rhsGrid g = rhsCell <$> g <*> derivGrid g
+
+bcGrid :: Num a => Grid b (Cell a) -> Grid b (Cell a)
+bcGrid g = g {cells = V.imap bcs (cells g)}
   where
-    blo = cells g ! 0
-    bhi = cells g ! (np - 1)
-    np = length (cells g)
+    bcs i c
+        | i == 0 = blo
+    bcs i c
+        | i == np - 1 = bhi
+    bcs i c = c
+    blo = bcCell $ cells g ! 2
+    bhi = bcCell $ cells g ! (np - 3)
+    np = npGrid g
 
 rk2Grid ::
        (Fractional a, Applicative c)

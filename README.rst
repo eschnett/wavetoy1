@@ -19,11 +19,11 @@ Build instructions
 
 .. code:: sh
 
-    # Build the project.
-    stack build
-
     # Run the test suite.
     stack test
+
+    # Build the project.
+    stack build
 
     # Run the benchmarks.
     stack bench

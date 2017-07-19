@@ -25,8 +25,7 @@ main =
                      let skel = skeletonGrid (0, 1) np :: Grid Double ()
                          coords = coordGrid skel
                          g = initGrid 0 coords
-                         bs = bcGrid g
-                         r = rhsGrid bs g
+                         r = bcGrid (rhsGrid g)
                      in integralGrid $ energyGrid r)
                 gridSize
           , bench "rk2" $
@@ -35,7 +34,7 @@ main =
                      let skel = skeletonGrid (0, 1) np :: Grid Double ()
                          coords = coordGrid skel
                          g = initGrid 0 coords
-                         rhs x = rhsGrid (bcGrid x) x
+                         rhs x = bcGrid (rhsGrid x)
                          step = rk2Grid smallStep rhs
                          g' = iterate step g !! numSteps
                      in integralGrid $ energyGrid g')
