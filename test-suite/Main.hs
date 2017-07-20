@@ -73,12 +73,12 @@ specCell =
                     in e == 0.5 * vx ^ 2
         describe "rhsCell" $ do
             it "is not all zero" $
-                property $ \t x ->
+                property $ \t x t' x' ->
                     let c = initCell (t, x) :: Cell Double
-                        cx = initCell (t + 0.1, x) :: Cell Double
+                        cx = initCell (t', x') :: Cell Double
                         r = rhsCell c cx
                     in u r /= 0 || rho r /= 0 || vx r /= 0
-        describe "reflectCell" $ do
+        describe "bcCell" $ do
             it "is possibly a reflection" $
                 property $ \t x ->
                     let c = initCell (t, x) :: Cell Double
@@ -141,8 +141,8 @@ specGrid =
                     (np > 3 && xmax > xmin) ==>
                     let skel = skeletonGrid (xmin, xmax) np
                         coords = coordGrid skel :: Grid Double Double
-                        norm =
-                            normGrid $ fmap (\x -> Identity (alpha * x)) coords
+                        g = fmap (\x -> Identity (alpha * x)) coords
+                        norm = normGrid g
                     in norm >= 0
             it "is linear" $
                 property $ \beta xmin xmax np ->
