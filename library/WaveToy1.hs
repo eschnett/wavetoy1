@@ -104,7 +104,8 @@ densitizeGrid g = g {cells = V.imap dens (cells g)}
         | i == 0 || i == np - 1 = 0
     dens i x
         | i == 1 || i == np - 2 = 1 / 2 * x
-    dens i x = x
+    dens i x
+        | otherwise = x
     np = npGrid g
 
 integralGrid :: (Fractional a, RealFrac b) => Grid b a -> a
@@ -147,7 +148,8 @@ derivGrid g = g {cells = V.generate np deriv}
         | i == 0 = diff (1 / dx) (cs ! 0) (cs ! 1)
     deriv i
         | i == np - 1 = diff (1 / dx) (cs ! (np - 2)) (cs ! (np - 1))
-    deriv i = diff (1 / (2 * dx)) (cs ! (i - 1)) (cs ! (i + 1))
+    deriv i
+        | otherwise = diff (1 / (2 * dx)) (cs ! (i - 1)) (cs ! (i + 1))
     diff alpha = liftA2 (\xm xp -> realToFrac alpha * (xp - xm))
     cs = cells g
     np = npGrid g
@@ -163,7 +165,8 @@ bcGrid g = g {cells = V.imap bcs (cells g)}
         | i == 0 = blo
     bcs i c
         | i == np - 1 = bhi
-    bcs i c = c
+    bcs i c
+        | otherwise = c
     blo = bcCell $ cells g ! 2
     bhi = bcCell $ cells g ! (np - 3)
     np = npGrid g
