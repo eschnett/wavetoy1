@@ -4,14 +4,14 @@
 benchmarks:
   wavetoy1-benchmarks:
     dependencies:
-    - base
-    - criterion
-    - wavetoy1
+      - base
+      - criterion
+      - wavetoy1
     ghc-options:
-    - -O2
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
+      - -O2
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
     main: Main.hs
     source-dirs: benchmark
 category: Other
@@ -19,28 +19,30 @@ description: wavetoy1 is a Haskell WaveToy implementation
 executables:
   wavetoy1:
     dependencies:
-    - base
-    - monad-loops
-    - wavetoy1
+      - base
+      - monad-loops
+      - wavetoy1
     ghc-options:
-    - -O2
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
+      - -O2
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
     main: Main.hs
     source-dirs: executable
 extra-source-files:
-- CHANGELOG.rst
-- LICENSE.rst
-- package.yaml
-- README.rst
-- stack.yaml
-ghc-options: -Wall
+  - CHANGELOG.rst
+  - LICENSE.rst
+  - package.yaml
+  - README.rst
+  - stack.yaml
+ghc-options:
+  - -Wall
+  - -Wno-type-defaults
 github: eschnett/wavetoy1
 library:
   dependencies:
-  - base
-  - vector
+    - base
+    - vector
   source-dirs: library
 license: MIT
 maintainer: Erik Schnetter
@@ -49,18 +51,18 @@ synopsis: wavetoy1 is a Haskell WaveToy implementation
 tests:
   wavetoy1-test-suite:
     dependencies:
-    - base
-    - ieee754
-    - tasty
-    - tasty-hspec
-    - tasty-quickcheck
-    - tasty-smallcheck
-    - vector
-    - wavetoy1
+      - base
+      - ieee754
+      - tasty
+      - tasty-hspec
+      - tasty-quickcheck
+      - tasty-smallcheck
+      - vector
+      - wavetoy1
     ghc-options:
-    - -rtsopts
-    - -threaded
-    - -with-rtsopts=-N
+      - -rtsopts
+      - -threaded
+      - -with-rtsopts=-N
     main: Main.hs
     source-dirs: test-suite
 version: '3.0.0'
