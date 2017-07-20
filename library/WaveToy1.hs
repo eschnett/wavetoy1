@@ -107,8 +107,6 @@ densitizeGrid g = g {cells = V.imap dens (cells g)}
     dens i x = x
     np = npGrid g
 
--- volumeFormGrid :: Fractional a => Grid b c -> Grid b a
--- volumeFormGrid g = densitizeGrid (fmap (const 1) g)
 integralGrid :: (Fractional a, RealFrac b) => Grid b a -> a
 integralGrid g = realToFrac (dxGrid g) * sum (densitizeGrid g)
 
