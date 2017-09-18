@@ -37,6 +37,8 @@ extra-source-files:
   - stack.yaml
 ghc-options:
   - -Wall
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
   - -Wno-type-defaults
 github: eschnett/wavetoy1
 library:
@@ -65,4 +67,4 @@ tests:
       - -with-rtsopts=-N
     main: Main.hs
     source-dirs: test-suite
-version: '3.0.0'
+version: '3.0.0.1'
