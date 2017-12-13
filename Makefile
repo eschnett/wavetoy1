@@ -1,10 +1,12 @@
 DIRS = library executable test-suite benchmark
 EXE = wavetoy1
 
-all: indent lint build test bench doc exec
+all: indent lint build test coverage bench doc exec
 
 setup:
+#	TODO: Remove MacPorts (/opt/local) from PATH
 	stack setup
+	stack install hlint
 
 indent:
 #	find $(DIRS) -name '*.hs' -print0 | xargs -0 -P4 -n1 hindent
@@ -16,7 +18,10 @@ lint: indent
 build: indent
 	stack build
 test: indent
+#	stack test --coverage
 	stack test
+coverage: indent test
+#	stack hpc report
 bench: indent
 	stack bench
 doc: indent
@@ -25,7 +30,8 @@ exec: indent
 	stack exec $(EXE)
 
 clean:
+	rm -f $(EXE).cabal
 	rm -f report.html
 	stack clean
 
-.PHONY: all setup indent lint build test bench doc exec clean
+.PHONY: all setup indent lint build test coverage bench doc exec clean
