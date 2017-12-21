@@ -15,7 +15,7 @@ addons:
     packages:
       - libgmp-dev
 
-# Caching so the next build will be fast too.
+# Caching so the next build will be faster
 cache:
   directories:
     - $HOME/.stack
@@ -25,11 +25,12 @@ before_install:
   - mkdir -p "$HOME/.local/bin"
   - export "PATH=$HOME/.local/bin:$PATH"
   - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C "$HOME/.local/bin" '*/stack'
+  # - stack install stack-hpc-coveralls
   - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar xj -C "$HOME/.local/bin"
 
 install:
   # Build dependencies
-  - stack -j2 --no-terminal --install-ghc test --only-dependencies
+  - stack -j2 --no-terminal --install-ghc build --only-dependencies
 
 script:
   # Build the package, its tests, and its docs, and run the tests
@@ -37,7 +38,4 @@ script:
 
 after_script:
   # Collect and submit coverage information
-  # - stack install stack-hpc-coveralls
-  # - travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar -xj
-  # - ./shc wavetoy1 wavetoy1-test-suite
   - shc wavetoy1 wavetoy1-test-suite
