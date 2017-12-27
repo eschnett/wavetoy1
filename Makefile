@@ -30,8 +30,8 @@ exec: indent
 	stack exec $(EXE)
 
 clean:
+	stack clean
 	rm -f $(EXE).cabal
 	rm -f report.html
-	stack clean
 
 .PHONY: all setup indent lint build test coverage bench doc exec clean
