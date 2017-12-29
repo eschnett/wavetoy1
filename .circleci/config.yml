@@ -1,27 +1,27 @@
 version: 2
 jobs:
-   build:
-     docker:
-       - image: buildpack-deps:trusty
-      steps:
-        - checkout
-        - run: echo "hello world"
-        # Download and unpack the stack executable
-        - run: |
-            mkdir -p "$HOME/.local/bin"
-            export "PATH=$HOME/.local/bin:$PATH"
-            curl -L https://github.com/commercialhaskell/stack/releases/download/v1.6.3/stack-1.6.3-linux-x86_64.tar.gz | tar zx -C "$HOME/.local/bin" '*/stack'
-            curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar xj -C "$HOME/.local/bin"
-        # Build dependencies
-        - run: |
-            stack -j2 --no-terminal --install-ghc test --only-dependencies
-        # Build the package, its tests, and its docs, and run the
-        # tests
-        - run: |
-            stack -j2 --no-terminal test --haddock --no-haddock-deps --coverage
-        # Collect and submit coverage information
-        - run: |
-            shc wavetoy1 wavetoy1-test-suite
+  build:
+    docker:
+      - image: buildpack-deps:trusty
+    steps:
+      - checkout
+      - run: echo "hello world"
+      # Download and unpack the stack executable
+      - run: |
+          mkdir -p "$HOME/.local/bin"
+          export "PATH=$HOME/.local/bin:$PATH"
+          curl -L https://github.com/commercialhaskell/stack/releases/download/v1.6.3/stack-1.6.3-linux-x86_64.tar.gz | tar zx -C "$HOME/.local/bin" '*/stack'
+          curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar xj -C "$HOME/.local/bin"
+      # Build dependencies
+      - run: |
+          stack -j2 --no-terminal --install-ghc test --only-dependencies
+      # Build the package, its tests, and its docs, and run the
+      # tests
+      - run: |
+          stack -j2 --no-terminal test --haddock --no-haddock-deps --coverage
+      # Collect and submit coverage information
+      - run: |
+          shc wavetoy1 wavetoy1-test-suite
     
 #   cache_directories:
 #     - "~/.stack"
