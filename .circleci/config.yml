@@ -30,6 +30,7 @@ jobs:
           key: stack
           paths:
             - ~/.stack
+      # TODO: shc calls stack without the "--no-nix" option, which fails
       # - run:
       #     name: Collect and submit coverage information
       #     command: |
