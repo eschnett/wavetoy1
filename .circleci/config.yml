@@ -8,6 +8,7 @@ jobs:
       - run:
           name: Download and unpack the stack executable
           command: |
+            apt-get update
             apt-get install libgmp-dev
             mkdir -p "$HOME/.local/bin"
             export "PATH=$HOME/.local/bin:$PATH"
