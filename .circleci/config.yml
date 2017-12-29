@@ -12,10 +12,10 @@ jobs:
             export "PATH=$HOME/.local/bin:$PATH"
             curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C "$HOME/.local/bin" '*/stack'
             curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar xj -C "$HOME/.local/bin"
-#       # Build dependencies
-#       - run:
-#           commmand: |
-#             stack -j2 --no-terminal --install-ghc test --only-dependencies
+      # Build dependencies
+      - run:
+          commmand: |
+            stack -j2 --no-terminal --install-ghc test --only-dependencies
 #       # Build the package, its tests, and its docs, and run the
 #       # tests
 #       - run:
