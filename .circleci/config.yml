@@ -29,7 +29,7 @@ jobs:
       - save_cache:
           key: stack
           paths:
-            - "$HOME/.stack"
+            - ~/.stack
       # - run:
       #     name: Collect and submit coverage information
       #     command: |
