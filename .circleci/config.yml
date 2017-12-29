@@ -8,6 +8,7 @@ jobs:
       - run:
           name: Download and unpack the stack executable
           command: |
+            cat /proc/cpuinfo
             mkdir -p "$HOME/.local/bin"
             export "PATH=$HOME/.local/bin:$PATH"
             curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C "$HOME/.local/bin" '*/stack'
@@ -16,12 +17,12 @@ jobs:
           name: Build dependencies
           command: |
             export "PATH=$HOME/.local/bin:$PATH"
-            stack -j2 --no-terminal --install-ghc test --only-dependencies
+            stack -j2 --no-nix --no-terminal --install-ghc test --only-dependencies
       - run:
           name: Build the package, its tests, and its docs, and run the tests
           command: |
             export "PATH=$HOME/.local/bin:$PATH"
-            stack -j2 --no-terminal test --haddock --no-haddock-deps --coverage
+            stack -j2 --no-nix --no-terminal test --haddock --no-haddock-deps --coverage
       - run:
           name: Collect and submit coverage information
           command: |
