@@ -9,7 +9,7 @@ jobs:
           name: Download and unpack the stack executable
           command: |
             apt-get update
-            apt-get install libgmp-dev
+            apt-get -y install libgmp-dev
             mkdir -p "$HOME/.local/bin"
             export "PATH=$HOME/.local/bin:$PATH"
             curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C "$HOME/.local/bin" '*/stack'
