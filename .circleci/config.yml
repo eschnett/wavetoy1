@@ -20,12 +20,12 @@ jobs:
           name: Build dependencies
           command: |
             export "PATH=$HOME/.local/bin:$PATH"
-            stack -j2 --no-nix --no-terminal --install-ghc test --only-dependencies
+            stack -j2 --no-terminal --install-ghc test --only-dependencies
       - run:
           name: Build the package, its tests, and its docs, and run the tests
           command: |
             export "PATH=$HOME/.local/bin:$PATH"
-            stack -j2 --no-nix --no-terminal test --haddock --no-haddock-deps --coverage
+            stack -j2 --no-terminal test --haddock --no-haddock-deps --coverage
       - save_cache:
           key: stack-lts-10.1
           paths:
