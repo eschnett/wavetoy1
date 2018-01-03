@@ -42,15 +42,15 @@ iterateWhileM_ predicate action state = do
 main :: IO ()
 main = do
     putStrLn "WaveToy1"
-    let skel = skeletonGrid (xmin, xmax) (ncells + 3)
-    let iter = 0
+    let skel  = skeletonGrid (xmin, xmax) (ncells + 3)
+    let iter  = 0
     let state = initGrid tini skel
     output (iter, state)
     iterateWhileM_ cond step (iter, state)
   where
     cond (iter, state) = iter < niters
     step (iter, state) = do
-        let iter' = iter + 1
+        let iter'  = iter + 1
         let state' = rk2Grid dt rhs state
         output (iter', state')
         return (iter', state')
