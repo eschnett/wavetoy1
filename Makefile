@@ -10,8 +10,8 @@ setup:
 
 indent:
 #	find $(DIRS) -name '*.hs' -print0 | xargs -0 -P4 -n1 hindent
-	find $(DIRS) -name '*.hs' -print0 | \
-		xargs -0 -P4 -n1 ./write-if-changed.sh brittany
+# 	find $(DIRS) -name '*.hs' -print0 | \
+# 		xargs -0 -P4 -n1 ./write-if-changed.sh brittany
 
 lint: indent
 	hlint lint --report --no-exit-code $(DIRS)
